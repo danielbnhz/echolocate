@@ -15,7 +15,7 @@ std::vector<float> matchedFilter(const std::vector<float>& rec,
     for (size_t i = 0; i < chirp.size(); ++i) C[i] = chirp[i];
 
     fft(R); fft(C);
-    for (size_t i = 0; i < n; ++i) R[i] *= std::conj(C[i]); // cross-correlation
+    for (size_t i = 0; i < n; ++i) R[i] *= std::conj(C[i]);
     fft(R, true);
 
     std::vector<float> out(rec.size());
@@ -36,7 +36,7 @@ std::vector<Echo> findEchoes(const std::vector<float>& mf, float sampleRate,
     for (size_t i = 1; i + 1 < mf.size(); ++i) {
         if (mf[i] >= thresh && mf[i] > mf[i - 1] && mf[i] >= mf[i + 1]) {
             if (!peaks.empty() && i - peaks.back() < minSep) {
-                if (mf[i] > mf[peaks.back()]) peaks.back() = i; // keep the taller
+                if (mf[i] > mf[peaks.back()]) peaks.back() = i;
             } else {
                 peaks.push_back(i);
             }
@@ -44,7 +44,8 @@ std::vector<Echo> findEchoes(const std::vector<float>& mf, float sampleRate,
     }
     if (peaks.empty()) return result;
 
-    const size_t t0 = peaks.front(); // direct path = time zero
+    size_t t0 = peaks.front();
+    for (size_t p : peaks) if (mf[p] > mf[t0]) t0 = p;
     for (size_t p : peaks) {
         Echo e;
         e.lagSamples = p;
@@ -55,4 +56,4 @@ std::vector<Echo> findEchoes(const std::vector<float>& mf, float sampleRate,
     return result;
 }
 
-} // namespace echo
+}

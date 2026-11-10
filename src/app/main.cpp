@@ -63,6 +63,7 @@ int main() {
     cfg.playback.format = ma_format_f32; cfg.playback.channels = 1;
     cfg.dataCallback = dataCallback;
     cfg.pUserData = &state;
+    cfg.periodSizeInFrames = 512;
 
     ma_device device;
     if (ma_device_init(nullptr, &cfg, &device) != MA_SUCCESS) {
@@ -72,12 +73,32 @@ int main() {
     std::printf("opened: capture %u ch, playback %u ch, %u Hz\n",
                 device.capture.channels, device.playback.channels, device.sampleRate);
 
-    ma_device_start(&device);
-    while (!state.done) std::this_thread::sleep_for(std::chrono::milliseconds(5));
-    ma_device_uninit(&device);
+    if (ma_device_start(&device) != MA_SUCCESS) {
+        std::fprintf(stderr, "failed to start audio device\n");
+        ma_device_uninit(&device);
+        return 1;
+    }
 
-    std::printf("input peaks: ch1=%.3f  ch2=%.3f\n", state.chPeak[0], state.chPeak[1]);
+    while (!state.done.load()) {
+        std::this_thread::sleep_for(
+            std::chrono::milliseconds(5)
+        );
+    }
 
+    for (ma_uint32 c = 0; c < kMaxChannels; ++c) {
+        if (c < device.capture.channels) {
+            float peak = state.chPeak[c];
+
+            float dbfs = peak > 0.0f
+                ? 20.0f * std::log10(peak)
+                : -INFINITY;
+
+            std::printf(
+                "input ch%u: peak=%.8f  level=%.2f dBFS\n",
+                c + 1, peak, dbfs
+            );
+        }
+    }
     auto mf = echo::matchedFilter(state.recording, state.chirp);
     auto echoes = echo::findEchoes(mf, static_cast<float>(fs));
     std::printf("found %zu peaks (first = direct path)\n", echoes.size());

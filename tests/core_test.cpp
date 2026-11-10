@@ -60,6 +60,29 @@ int main() {
     }
 
     auto mf = echo::matchedFilter(rec, chirp);
+
+
+    auto scalarEchoes = echo::findEchoes(mf, fs);
+    auto bitwiseEchoes = echo::findEchoesBitwise(mf, fs);
+
+    bool same = scalarEchoes.size() == bitwiseEchoes.size();
+
+    if (same) {
+        for (size_t i = 0; i < scalarEchoes.size(); ++i) {
+            if (scalarEchoes[i].lagSamples !=
+                    bitwiseEchoes[i].lagSamples ||
+                std::fabs(scalarEchoes[i].strength -
+                          bitwiseEchoes[i].strength) > 0.000001f ||
+                std::fabs(scalarEchoes[i].distanceM -
+                          bitwiseEchoes[i].distanceM) > 0.000001f) {
+                same = false;
+                break;
+                          }
+        }
+    }
+
+    std::printf("Scalar vs bitwise: %s\n",
+                same ? "PASS" : "FAIL");
     auto echoes = echo::findEchoes(mf, fs);
 
     for (auto& e : echoes) {

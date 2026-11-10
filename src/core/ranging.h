@@ -22,4 +22,13 @@ std::vector<Echo> findEchoes(const std::vector<float>& mf,
                              float relThreshold = 0.1f,
                              size_t minSeparationSamples = 48);
 
+
+std::vector<Echo> findEchoesBitwise(
+    const std::vector<float>& mf,
+    float sampleRate,
+    float relThreshold = 0.1f,
+    size_t minSeparationSamples = 48
+);
+
+
 }  
